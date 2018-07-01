@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;
+using OQ.MineBot.PluginBase;
 using OQ.MineBot.PluginBase.Base.Plugin.Tasks;
+using OQ.MineBot.PluginBase.Classes.Blocks;
 
 namespace TextSpammerPlugin.Tasks
 {
-    public class Spam : ITask, ITickListener
+    public class Spam : ITask
     {
         private static readonly Random random = new Random();
 
@@ -25,11 +28,19 @@ namespace TextSpammerPlugin.Tasks
             this.linear   = linear;
         }
 
+        public override void Start() {
+            player.events.onTick += Tick;
+        }
+
+        public override void Stop() {
+            player.events.onTick -= Tick;
+        }
+
         public override bool Exec() {
             return DateTime.Now.Subtract(m_next).TotalMilliseconds > 0;
         }
 
-        public void OnTick() {
+        public void Tick(IPlayer p) {
 
             // Schedule next message.
             m_next =

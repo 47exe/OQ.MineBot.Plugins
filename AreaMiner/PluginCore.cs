@@ -37,10 +37,9 @@ namespace AreaMiner
             var startSplit = Setting[0].Get<string>().Split(' ');
             var endSplit = Setting[1].Get<string>().Split(' ');
             if (startSplit.Length != 3 || endSplit.Length != 3) return new PluginResponse(false, "Invalid coordinates (must be x y z).");
-
             return new PluginResponse(true);
         }
-        public override void OnDisable() { shares?.Clear(); }
+        public override void OnDisable() { shares?.Clear(); Mine.broken?.Clear(); }
 
         public override void OnStart() {
 
@@ -57,15 +56,13 @@ namespace AreaMiner
 
             var startSplit = Setting[0].Get<string>().Split(' ');
             var endSplit = Setting[1].Get<string>().Split(' ');
+            shares.SetArea(new IRadius(new Location(int.Parse(startSplit[0]), int.Parse(startSplit[1]), int.Parse(startSplit[2])),
+                           new Location(int.Parse(endSplit[0]), int.Parse(endSplit[1]), int.Parse(endSplit[2]))));
 
             var macro = new MacroSync();
 
             RegisterTask(new InventoryMonitor(Setting[2].Get<string>(), macro));
-            RegisterTask(new Path(shares,
-                                  new Location(int.Parse(startSplit[0]), int.Parse(startSplit[1]), int.Parse(startSplit[2])),
-                                  new Location(int.Parse(endSplit[0]), int.Parse(endSplit[1]), int.Parse(endSplit[2])),
-                                  (PathMode) Setting[5].Get<int>(), macro
-                                 ));
+            RegisterTask(new Path(shares, (PathMode) Setting[5].Get<int>(), macro ));
             RegisterTask(new Mine(shares, (Mode)Setting[3].Get<int>(), (PathMode)Setting[5].Get<int>(), ignoreIdList.ToArray(), macro));
         }
     }
@@ -79,7 +76,7 @@ public class ShareManager
     public void SetArea(IRadius radius) {
         this.radius = radius;
     }
-    public void Add(IPlayer player, IRadius radius) {
+    public void Add(IPlayer player) {
         zones.TryAdd(player, new SharedRadiusState(radius));
         Calculate();
     }
@@ -100,27 +97,30 @@ public class ShareManager
     }
 
     public void Calculate() {
-
+        
         var zones = this.zones.ToArray();
         var count = zones.Length;
 
         int x, z;
         int l;
+
         if (radius.xSize > radius.zSize) {
             x = (int)Math.Ceiling((double)radius.xSize / (double)count);
             l = radius.xSize;
             z = radius.zSize;
-            for (int i = 0; i < zones.Length; i++)
-                zones[i].Value.Update(new Location(radius.start.x + x * i, 0, radius.start.z),
-                                      new Location(radius.start.x + (x * (i + 1)) + (i == zones.Length - 1 ? l - (x * (i + 1)) : 0), 0, radius.start.z + z));
+
+            for (int i = 0; i < zones.Length; i++) {
+                zones[i].Value.Update(new Location(radius.start.x + x*i, radius.start.y, radius.start.z),
+                                      new Location(radius.start.x + (x*(i + 1)) + (i == zones.Length - 1 ? l - (x*(i + 1)) : 0), radius.start.y + radius.height, radius.start.z + z));
+            }
         }
         else {
             x = radius.xSize;
             z = (int)Math.Ceiling((double)radius.zSize / (double)count);
             l = radius.zSize;
             for (int i = 0; i < zones.Length; i++)
-                zones[i].Value.Update(new Location(radius.start.x, 0, radius.start.z + z * i),
-                                      new Location(radius.start.x + x, 0, radius.start.z + z * (i + 1) + (i == zones.Length - 1 ? l - (z * (i + 1)) : 0)));
+                zones[i].Value.Update(new Location(radius.start.x, radius.start.y, radius.start.z + z * i),
+                                      new Location(radius.start.x + x, radius.start.y + radius.height, radius.start.z + z * (i + 1) + (i == zones.Length - 1 ? l - (z * (i + 1)) : 0)));
         }
     }
 
@@ -150,7 +150,7 @@ public class SharedRadiusState
 
     public void Update(ILocation loc, ILocation loc2) {
         reached = false;
-        radius.UpdateHorizontal(loc, loc2);
+        radius = new IRadius(loc, loc2);
     }
 }
 

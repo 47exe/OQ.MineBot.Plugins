@@ -53,9 +53,13 @@ namespace AutoFishPlugin.Tasks
             return !status.entity.isDead && !status.eating;
         }
 
-        public void OnStart() {
-            player.events.onObjectSpawned += ObjectSpawned;
+        public override void Start() {
+            player.events.onObjectSpawned  += ObjectSpawned;
             player.events.onEntityVelocity += EntityVelocity;
+        }
+        public override void Stop() {
+            player.events.onObjectSpawned  -= ObjectSpawned;
+            player.events.onEntityVelocity -= EntityVelocity;
         }
 
         public void OnTick() {

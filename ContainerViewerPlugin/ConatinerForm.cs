@@ -34,6 +34,7 @@ namespace ContainerViewerPlugin
         private RenderedSlot selectedSlot;
 
         public static void LoadImages() {
+            IMAGE_ITEMS = new Dictionary<string, Image>();
             IMAGE_BACKGROUND = new Bitmap(Properties.Resources.Slot);
             IMAGE_BACKGROUNDSELECTED = new Bitmap(Properties.Resources.SlotSelected);
 

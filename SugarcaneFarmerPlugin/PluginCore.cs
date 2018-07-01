@@ -25,10 +25,11 @@ namespace SugarcaneFarmerPlugin
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[3];
+            this.Setting = new IPluginSetting[4];
             Setting[0] = new NumberSetting("Radius (sugarcane, x-radius):", "Radius around the initial bot spawn position that it will look around.", 64, 1, 1000, 1);
             Setting[1] = new NumberSetting("Radius (sugarcane, y-radius):", "What can be the Y difference for the bot for it to find valid sugarcanes.", 4, 1, 256, 1);
             Setting[2] = new ComboSetting("Speed mode", null, new string[] {"Accurate", "Tick", "Fast"}, 1);
+            Setting[3] = new BoolSetting("Fully grown only?", "Mine ONLY the sugarcanes that are 3 block high.", false);
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
@@ -38,7 +39,7 @@ namespace SugarcaneFarmerPlugin
         public override void OnStart() {
             RegisterTask(new Farm(
                             Setting[0].Get<int>(), Setting[1].Get<int>(),
-                            (Mode)Setting[2].Get<int>()
+                            (Mode)Setting[2].Get<int>(), Setting[3].Get<bool>()
                         ));
             RegisterTask(new Store());
 

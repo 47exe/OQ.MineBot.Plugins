@@ -1,16 +1,17 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using OQ.MineBot.GUI.Protocol.Movement.Maps;
 using OQ.MineBot.PluginBase.Base.Plugin.Tasks;
 using OQ.MineBot.PluginBase.Classes;
 
-namespace CropFarmerPlugin.Tasks
+namespace NetherwartFarmerPlugin.Tasks
 {
     public class Farm : ITask, ITickListener
     {
         private readonly MapOptions MO        = new MapOptions() { Look = false, Quality = SearchQuality.LOW };
-        private static ushort[]     FARMABLE  = { 59, 141, 142, 207 };
-        private static ushort[]     PLANTABLE = { 295, 391, 392, 435 };
+        private static ushort[]     FARMABLE  = { 115 };
+        private static ushort[]     PLANTABLE = { 372 };
 
         private int  x, y;
         private Mode mode;
@@ -48,6 +49,8 @@ namespace CropFarmerPlugin.Tasks
             if (tick > (mode == Mode.Accurate ? 6 : 3)) tick = 0;
             else return;
 
+            if(ReplantHandler()) return;
+
             var location = FindNext();
             if (location == null) return;
 
@@ -69,6 +72,28 @@ namespace CropFarmerPlugin.Tasks
             }
         }
 
+        private bool ReplantHandler() {
+
+            if (inventory.FindId(PLANTABLE[0]) == -1) return false;
+            var location = FindNextToReplant();
+            if (location == null) return false;
+
+            busy = true;
+            beingMined.TryAdd(location, null);
+
+            var map = actions.AsyncMoveToLocation(location, token, MO);
+            map.Completed += areaMap => {
+                Replant(location, FARMABLE[0]);
+            };
+            map.Cancelled += (areaMap, cuboid) => {
+                object obj; beingMined.TryRemove(location, out obj);
+                busy = false;
+            };
+            map.Start();
+
+            return true;
+        }
+
         private void Mine(ILocation location) {
             
             // Keep old data to know what to replant.
@@ -78,9 +103,7 @@ namespace CropFarmerPlugin.Tasks
             actions.LookAtBlock(location, true);
             player.tickManager.Register(1, () => {
                 actions.BlockDig(location, action => {
-                    Replant(location.Offset(-1), blockData);
-                    object obj; beingMined.TryRemove(location, out obj);
-                    busy = false;
+                    Replant(location, blockData);
                 });
             });
         }
@@ -97,11 +120,18 @@ namespace CropFarmerPlugin.Tasks
 
             if (inventory.Select(prioritizedArray) != -1) {
                 actions.LookAtBlock(location);
-                player.tickManager.Register(1, () => {
+                player.tickManager.Register((mode == Mode.Accurate ? 4 : 1), () =>
+                {
                     var data = player.functions.FindValidNeighbour(location);
-                    if(data != null)
-                        actions.BlockPlaceOnBlockFace(location, data.face);
+                    if (data != null)
+                        actions.BlockPlaceOnBlockFace(data.location, data.face);
+                    object obj; beingMined.TryRemove(location, out obj);
+                    busy = false;
                 });
+            }
+            else {
+                object obj; beingMined.TryRemove(location, out obj);
+                busy = false;
             }
         }
 
@@ -121,8 +151,35 @@ namespace CropFarmerPlugin.Tasks
             double distance = int.MaxValue;
             for (int i = 0; i < locations.Length; i++) {
                 var block = player.world.GetBlock(locations[i].x, (int)locations[i].y, locations[i].z);
-                if (FARMABLE.Contains((ushort) (block >> 4)) && (block & 15) >= 7 ||
-                    (FARMABLE[3] == (ushort)(block >> 4) && (block & 15) >= 3)) { // Beetroot
+                if (FARMABLE.Contains((ushort) (block >> 4)) && (block & 15) >= 3) {
+                    //Create the location.
+                    var loc = locations[i];
+
+                    //Check if already being mined.
+                    if (beingMined.ContainsKey(loc)) continue;
+
+                    //Check by difference.
+                    double tempDistance = loc.Distance(player.status.entity.location.ToLocation(0));
+                    if (nextMove == null) {
+                        distance = tempDistance;
+                        nextMove = loc;
+                    }
+                    else if (tempDistance < distance) {
+                        distance = tempDistance;
+                        nextMove = loc;
+                    }
+                }
+            }
+            return nextMove;
+        }
+
+        private ILocation FindNextToReplant() {
+
+            ILocation nextMove = null;
+            double distance = int.MaxValue;
+            for (int i = 0; i < locations.Length; i++) {
+                var block = player.world.GetBlockId(locations[i].x, (int)locations[i].y, locations[i].z);
+                if (block == 0) {
                     //Create the location.
                     var loc = locations[i];
 

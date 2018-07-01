@@ -60,7 +60,7 @@ namespace AreaMiner.Tasks
                     else {
 
                         actions.SelectBestTool(target);
-                        actions.LookAtBlock(target, true);
+                        actions.LookAtBlock(target, true, actions.FindClosestFace(status.entity.location, target));
                         player.tickManager.Register(2, () =>
                         {
                             if (pathMode == PathMode.Advanced) broken.TryAdd(target, DateTime.Now);
@@ -133,7 +133,7 @@ namespace AreaMiner.Tasks
         /// <summary>
         /// Blocks that are having a hard time being mined.
         /// </summary>
-        private static readonly ConcurrentDictionary<ILocation, DateTime> broken = new ConcurrentDictionary<ILocation, DateTime>();
+        public static readonly ConcurrentDictionary<ILocation, DateTime> broken = new ConcurrentDictionary<ILocation, DateTime>();
         
         #endregion
     }

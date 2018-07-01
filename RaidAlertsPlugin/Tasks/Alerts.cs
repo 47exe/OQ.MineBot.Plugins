@@ -32,7 +32,7 @@ namespace RaidAlertsPlugin.Tasks
         private readonly ILocation[]        lamps;
         private readonly DiscordHelper.Mode mode;
         private readonly bool               falling;
-        
+
         public Alerts(ulong discord, bool local, bool explosion, bool wither, bool creeper, bool players, string friendly, ILocation[] lamps, DiscordHelper.Mode mode, bool falling) {
             this.discord   = discord;
             this.local     = local;
@@ -53,6 +53,7 @@ namespace RaidAlertsPlugin.Tasks
             player.events.onBlockChanged  += OnBlockChanged;
             player.events.onDeath         += OnDeath;
             player.events.onObjectSpawned += OnObjectSpawned;
+            player.events.onDisconnected  += OnDisconnected;
         }
 
         public override void Stop() {
@@ -61,6 +62,11 @@ namespace RaidAlertsPlugin.Tasks
             player.events.onBlockChanged  -= OnBlockChanged;
             player.events.onDeath         -= OnDeath;
             player.events.onObjectSpawned -= OnObjectSpawned;
+            player.events.onDisconnected  -= OnDisconnected;
+        }
+
+        private void OnDisconnected(IPlayer player, string reason) {
+            NotifyUser(ApplyVariables("Bot disconnected.", player.status.entity.location.ToLocation(0), null, "", reason), 10, 8);
         }
 
         private void OnObjectSpawned(IWorldObject worldObject, double d, double d1, double d2, byte pitch, byte yaw) {
@@ -106,7 +112,7 @@ namespace RaidAlertsPlugin.Tasks
                 var friendly = friendlyFixed.Split(' ');
                 if (!friendly.Contains(playerEntity.uuid, StringComparer.CurrentCultureIgnoreCase)) {
                     var name = player.entities.FindNameByUuid(playerEntity?.uuid);
-                    if(name?.Name != null && !friendly.Contains(name.Name))
+                    if((name?.Name != null && !friendly.Contains(name.Name)) && (name?.Uuid != null && !player.entities.IsBot(name.Uuid)))
                         NotifyUser(ApplyVariables("A player has been detected.", player.status.entity.location.ToLocation(0), playerEntity.location.ToLocation(0), name.Name), 4, 3);
                 }
             }
@@ -135,7 +141,7 @@ namespace RaidAlertsPlugin.Tasks
             else       DiscordHelper.SendMessage (discord, "Raid Alert!", body[0], body[1], priority >= 5, mode);
         }
 
-        private string[] ApplyVariables(string text, ILocation playerLocation, ILocation targetLocation, string targetName) {
+        private string[] ApplyVariables(string text, ILocation playerLocation, ILocation targetLocation, string targetName, string reason = null) {
 
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("**"+text+"**");
@@ -143,6 +149,7 @@ namespace RaidAlertsPlugin.Tasks
             if (!string.IsNullOrWhiteSpace(targetName)) builder.AppendLine("Name: *'" + targetName + "'*");
             if (targetLocation != null) builder.AppendLine("Location: *'" + targetLocation + "' ("+ Math.Floor(Math.Abs(targetLocation.Distance(playerLocation))) + " blocks away)*");
             builder.AppendLine("Bot name: *'" + status.username + "'*");
+            if (reason != null) builder.AppendLine("Reason: *'" + reason + "'*");
             return new string[] {text, builder.ToString()};
         }
     }

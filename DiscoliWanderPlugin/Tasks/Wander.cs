@@ -25,7 +25,7 @@ namespace DiscoliWanderPlugin.Tasks
             int z   = (int) status.entity.location.Z + random.Next(-10, 20);
             ILocation location = new Location(x, y, z);
             location = ToGround(location);
-            
+            if (location == null) return;
 
             busy = true;
             var map = actions.AsyncMoveToLocation(location, token, MO);

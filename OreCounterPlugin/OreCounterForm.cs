@@ -74,6 +74,8 @@ namespace OreCounterPlugin
             Color color = COLOR_POSITIVE;
             if (value <= 0) color = COLOR_ZERO;
 
+            if (!this.IsHandleCreated)
+                this.CreateControl();
             this.Invoke((MethodInvoker) (() => {
                 indexedLabels[index].Text = value.ToString();
                 indexedLabels[index].ForeColor = color;
@@ -107,6 +109,8 @@ namespace OreCounterPlugin
             var stats = new PlayerStats(player.status.username, indexedLabels.Length);
             playerStats.Add(player.status.username, stats);
 
+            if(!this.IsHandleCreated)
+                this.CreateControl();
             this.Invoke((MethodInvoker) (() => {
                 AccountList.Items.Add(stats);
             }));

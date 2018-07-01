@@ -73,8 +73,10 @@ namespace OreMinerPlugin.Tasks
             busy = true;
             world.FindFirstAsync(player, player.status.entity.location.ToLocation(0), 64, 256, ids, IsSafe, loc =>
             {
-                beingMined.TryAdd(loc, null);
-                this.location = loc.Offset(-1);
+                if (loc != null) {
+                    beingMined.TryAdd(loc, null);
+                    this.location = loc.Offset(-1);
+                }
                 this.busy     = false;
             });
         }

@@ -187,13 +187,17 @@ namespace SandPrinterPlugin.Tasks
         private void LookAtSide(IPosition offset) {
 
             double x = 0, z = 0;
-            if (offset.X > 0.7) x = 0.5;
-            else if (offset.X < -0.7) x = -0.5;
-            if (offset.Z > 0.7) z = 0.5;
-            else if (offset.Z < -0.7) z = -0.5;
+            if (offset != null) {
+                if (offset.X > 0.7) x = 0.5;
+                else if (offset.X < -0.7) x = -0.5;
+                if (offset.Z > 0.7) z = 0.5;
+                else if (offset.Z < -0.7) z = -0.5;
+            }
 
-            var temp = new Position(neighbour.location.x + x + 0.5, neighbour.location.y + 0.3f, neighbour.location.z + 0.5 + z);
-            player.functions.LookAt(temp, true);
+            if (neighbour != null) {
+                var temp = new Position(neighbour.location.x + x + 0.5, neighbour.location.y + 0.3f, neighbour.location.z + 0.5 + z);
+                player.functions.LookAt(temp, true);
+            }
         }
 
 

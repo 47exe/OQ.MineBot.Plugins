@@ -13,17 +13,19 @@ namespace SugarcaneFarmerPlugin.Tasks
 
         private readonly int x, z;
         private readonly Mode mode;
+        private readonly bool fullOnly;
 
         private bool scan;
         private bool scanning;
         private ILocation[] locations;
         private bool busy;
 
-        public Farm(int x, int z, Mode mode) {
+        public Farm(int x, int z, Mode mode, bool fullOnly) {
             this.x = x;
             this.z = z;
             this.mode = mode;
             this.scan = true;
+            this.fullOnly = fullOnly;
             this.personalBlocks.Clear();
         }
 
@@ -110,7 +112,7 @@ namespace SugarcaneFarmerPlugin.Tasks
             ILocation nextMove = null;
             double distance = int.MaxValue;
             for (int i = 0; i < locations.Length; i++)
-                if (locations[i] != null && player.world.GetBlockId(locations[i].x, (int)locations[i].y + 1, locations[i].z) == SUGARCANE) {
+                if (locations[i] != null && LocationValid(locations[i])) {
 
                     //Create the location.
                     var loc = locations[i];
@@ -132,6 +134,12 @@ namespace SugarcaneFarmerPlugin.Tasks
                     }
                 }
             return nextMove;
+        }
+
+        private bool LocationValid(ILocation location) {
+            if (!fullOnly) return player.world.GetBlockId(location.Offset(1)) == SUGARCANE;
+            else           return player.world.GetBlockId(location.Offset(1)) == SUGARCANE && 
+                                  player.world.GetBlockId(location.Offset(2)) == SUGARCANE;
         }
 
         // These classes allow the bots

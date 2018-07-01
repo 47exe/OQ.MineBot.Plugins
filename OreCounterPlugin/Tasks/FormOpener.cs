@@ -21,15 +21,19 @@ namespace OreCounterPlugin.Tasks
             _form = new OreCounterForm();
 
             bool loaded = false;
-            _form.Shown += (sender, args) => loaded = true;
+            //_form.Shown += (sender, args) => loaded = true;
+            _form.HandleCreated += (sender, args) => loaded = true;
             var thread = new Thread(() => {
                 _form.Show();
                 Application.Run(_form);
+                
             });
             thread.IsBackground = true;
             thread.Start();
+            
 
             while(loaded) Thread.Sleep(1);
+            Thread.Sleep(1000);
         }
 
         public static void CloseForm() {
