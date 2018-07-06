@@ -12,7 +12,7 @@ namespace ShieldPlugin
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[7];
+            /*
             Setting[0] = new StringSetting("Owner name/uuid", "Player that the bots will follow.", "");
             Setting[1] = new NumberSetting("Clicks per second", "How fast should the bot attack?", 5, 1, 60, 1);
             Setting[2] = new NumberSetting("Miss rate", "How often does the bot miss?", 15, 0, 100, 1);
@@ -20,22 +20,40 @@ namespace ShieldPlugin
             Setting[4] = new BoolSetting("Auto equip best armor?", "Should the bot auto equip the best armor it has?", true);
             Setting[5] = new BoolSetting("Equip best weapon?", "Should the best item be auto equiped?", true);
             Setting[6] = new ComboSetting("Mode", null, new string[] {"Passive", "Aggressive"}, 0);
+            */
+
+            Setting.Add(new StringSetting("Owner name/uuid", "Player that the bots will follow.", ""));
+            Setting.Add(new StringListSetting("Friendly name(s)/uuid(s)", "Uuids of the user that own't be hit. Split by spaces'", ""));
+            Setting.Add(new ComboSetting("Mode", null, new string[] { "Passive", "Aggressive" }, 0));
+
+            var clickGroup = new GroupSetting("Clicks", "");
+                clickGroup.Add(new NumberSetting("Clicks per second", "How fast should the bot attack?", 5, 1, 60, 1));
+                clickGroup.Add(new NumberSetting("Miss rate", "How often does the bot miss?", 15, 0, 100, 1));
+            Setting.Add(clickGroup);
+
+            var equipmentGroup = new GroupSetting("Equipment", "");
+                equipmentGroup.Add(new BoolSetting("Auto equip best armor?", "Should the bot auto equip the best armor it has?", true));
+                equipmentGroup.Add(new BoolSetting("Equip best weapon?", "Should the best item be auto equiped?", true));
+            Setting.Add(equipmentGroup);
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
             if (!botSettings.loadWorld) return new PluginResponse(false, "'Load world' must be enabled.");
             if (!botSettings.loadEntities || !botSettings.loadPlayers) return new PluginResponse(false, "'Load players' must be enabled.");
-            if(string.IsNullOrWhiteSpace(this.Setting[0].Get<string>())) return new PluginResponse(false, "Invalid owner name/uuid.");
+            if(string.IsNullOrWhiteSpace(this.Setting.At(0).Get<string>())) return new PluginResponse(false, "Invalid owner name/uuid.");
             return new PluginResponse(true);
         }
 
         public override void OnStart() {
 
-            var names = new ResolvableNameCollection(Setting[3].Get<string>());
+            var clickGroup = (IParentSetting)Setting.Get("Clicks");
+            var equipmentGroup = (IParentSetting)Setting.Get("Equipment");
 
-            RegisterTask(new Follow(Setting[0].Get<string>(), (Mode)Setting[6].Get<int>(), names));
-            RegisterTask(new Attack(Setting[1].Get<int>(), Setting[2].Get<int>(), Setting[5].Get<bool>()));
-            RegisterTask(new Equipment(Setting[4].Get<bool>()));
+            var names = new ResolvableNameCollection(Setting.GetValue<string>("Friendly name(s)/uuid(s)"));
+
+            RegisterTask(new Follow(Setting.GetValue<string>("Owner name/uuid"), (Mode)Setting.GetValue<int>("Mode"), names));
+            RegisterTask(new Attack(clickGroup.GetValue<int>("Clicks per second"), clickGroup.GetValue<int>("Miss rate"), equipmentGroup.GetValue<bool>("Equip best weapon?")));
+            RegisterTask(new Equipment(equipmentGroup.GetValue<bool>("Auto equip best armor?")));
         }
     }
 

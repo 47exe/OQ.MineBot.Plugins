@@ -78,9 +78,11 @@ namespace CropFarmerPlugin.Tasks
             actions.LookAtBlock(location, true);
             player.tickManager.Register(1, () => {
                 actions.BlockDig(location, action => {
-                    Replant(location.Offset(-1), blockData);
-                    object obj; beingMined.TryRemove(location, out obj);
-                    busy = false;
+                    player.tickManager.Register(3, () => {
+                        Replant(location.Offset(-1), blockData);
+                        object obj; beingMined.TryRemove(location, out obj);
+                        busy = false;
+                    });
                 });
             });
         }

@@ -14,56 +14,59 @@ using OQ.MineBot.Protocols.Classes.Base;
 
 namespace AreaMiner
 {
-    [Plugin(1, "Area miner", "Mines the area that is selected by the user.")]
+    [Plugin(1, "Area miner", "Mines the area that is selected by the user.", "https://www.youtube.com/watch?v=Z0VB4PElvRY&t=129s")]
     public class PluginCore : IStartPlugin
     {
         private static readonly ShareManager shares = new ShareManager();
 
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[6];
-            Setting[0] = new StringSetting("Start x y z", "", "0 0 0");
-            Setting[1] = new StringSetting("End x y z", "", "0 0 0");
-            Setting[2] = new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", "");
-            Setting[3] = new ComboSetting("Speed mode", null, new string[] {"Accurate", "Fast"}, 0);
-            Setting[4] = new StringSetting("Ignore ids", "What blocks should be ignored.", "");
-            Setting[5] = new ComboSetting("Path mode", null, new string[] {"Advanced (mining & building)", "Basic"}, 0);
+
+            this.Setting.Add(new LocationSetting("Start x y z", ""));
+            this.Setting.Add(new LocationSetting("End x y z", ""));
+            this.Setting.Add(new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", ""));
+            this.Setting.Add(new ComboSetting("Speed mode", null, new string[] { "Accurate", "Fast" }, 0));
+            this.Setting.Add(new ComboSetting("Path mode", null, new string[] { "Advanced (mining & building)", "Basic" }, 0));
+
+            var blockGroup = new GroupSetting("Blocks", "Block related settings can be found here.");
+            blockGroup.Add(new BlockCollectionSetting("Ignore ids", "What blocks should be ignored.", "", true));
+            this.Setting.Add(blockGroup);
+
+            /*
+            this.Setting.Add(new LocationSetting("--TEMP", "--DESC", new Location(0, 0, 0)));
+            this.Setting.Add(new StringListSetting("--TEMP2", "--DESC2", ""));
+            this.Setting.Add(new BlockCollectionSetting("--TEMP3", "--DESC3", "", true));
+
+            var group = new GroupSetting("Testing groups", "group description");
+            group.Add(new StringSetting("wow", "dab", "haters"));
+
+            var temp = new ComboSetting("TEST SETTING", null, new string[] {"TEST 1", "TEST 2"}, 0);
+            temp.Add(0, new StringSetting("1.1", "What blocks should be ignored.", "1.1"));
+            temp.Add(0, new StringSetting("1.2", "What blocks should be ignored.", "1.2"));
+            temp.Add(0, new StringSetting("1.3", "What blocks should be ignored.", "1.3"));
+            temp.Add(1, new StringSetting("1.1", "What blocks should be ignored.", "1.1"));
+            group.Add(temp);
+
+            this.Setting.Add(group);
+            */
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
             if (!botSettings.loadWorld) return new PluginResponse(false, "'Load world' must be enabled.");
-            if(string.IsNullOrWhiteSpace(Setting[0].Get<string>()) ||
-               string.IsNullOrWhiteSpace(Setting[1].Get<string>())  ) return new PluginResponse(false, "No coordinates have been entered.");
-            if (!Setting[0].Get<string>().Contains(' ') || !Setting[1].Get<string>().Contains(' ')) return new PluginResponse(false, "Invalid coordinates (does not contain ' ').");
-            var startSplit = Setting[0].Get<string>().Split(' ');
-            var endSplit = Setting[1].Get<string>().Split(' ');
-            if (startSplit.Length != 3 || endSplit.Length != 3) return new PluginResponse(false, "Invalid coordinates (must be x y z).");
+            if(Setting.GetValue<ILocation>("Start x y z").Compare(new Location(0, 0, 0)) && Setting.GetValue<ILocation>("End x y z").Compare(new Location(0, 0, 0))) return new PluginResponse(false, "No coordinates have been entered.");
             return new PluginResponse(true);
         }
         public override void OnDisable() { shares?.Clear(); Mine.broken?.Clear(); }
 
         public override void OnStart() {
+            
+            shares.SetArea(new IRadius(Setting.GetValue<ILocation>("Start x y z"), Setting.GetValue<ILocation>("End x y z")));
 
-            // Split the ids.
-            var ids = Setting[4].Get<string>().Split(' ');
-            List<ushort> ignoreIdList = new List<ushort>();
-            for (int i = 0; i < ids.Length; i++)
-            {
-                ushort id;
-                if (!ushort.TryParse(ids[i], out id))
-                    continue;
-                ignoreIdList.Add(id);
-            }
-
-            var startSplit = Setting[0].Get<string>().Split(' ');
-            var endSplit = Setting[1].Get<string>().Split(' ');
-            shares.SetArea(new IRadius(new Location(int.Parse(startSplit[0]), int.Parse(startSplit[1]), int.Parse(startSplit[2])),
-                           new Location(int.Parse(endSplit[0]), int.Parse(endSplit[1]), int.Parse(endSplit[2]))));
+            var blocks = Setting.Get("Blocks") as IParentSetting; // Get blocks group.
 
             var macro = new MacroSync();
-
-            RegisterTask(new InventoryMonitor(Setting[2].Get<string>(), macro));
-            RegisterTask(new Path(shares, (PathMode) Setting[5].Get<int>(), macro ));
-            RegisterTask(new Mine(shares, (Mode)Setting[3].Get<int>(), (PathMode)Setting[5].Get<int>(), ignoreIdList.ToArray(), macro));
+            RegisterTask(new InventoryMonitor(Setting.GetValue<string>("Macro on inventory full"), macro));
+            RegisterTask(new Path(shares, (PathMode) Setting.GetValue<int>("Path mode"), macro ));
+            RegisterTask(new Mine(shares, (Mode)Setting.GetValue<int>("Speed mode"), (PathMode)Setting.GetValue<int>("Path mode"), blocks.GetValue<BlockIdCollection>("Ignore ids").collection.Select(x=>x.id).Distinct().ToArray(), macro));
         }
     }
 }

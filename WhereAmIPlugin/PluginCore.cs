@@ -20,8 +20,7 @@ namespace WhereAmIPlugin
         private bool stopped;
 
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[1];
-            Setting[0] = new PathSetting("Where to save", "Path of a .txt file, which will hold all the saved locations.", "");
+            Setting.Add(new PathSetting("Where to save", "Path of a .txt file, which will hold all the saved locations.", ""));
         }
         public override PluginResponse OnEnable(IBotSettings botSettings) {
 
@@ -48,7 +47,7 @@ namespace WhereAmIPlugin
                     continue;
                 }
 
-                using (var stream = File.OpenWrite(Setting[0].Get<string>()))
+                using (var stream = File.OpenWrite(Setting.At(0).Get<string>()))
                     while (!toSaveQueue.IsEmpty) {
                         IPlayer player;
                         if (!toSaveQueue.TryDequeue(out player)) continue;

@@ -20,10 +20,9 @@ namespace BanCheckerPlugin
         private static Dictionary<string, string> AccountsSaved = new Dictionary<string, string>();
 
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[3];
-            Setting[0] = new PathSetting("Banned accounts", "Outputs banned accounts to this file.", "");
-            Setting[1] = new PathSetting("Unbanned accounts", "Outputs unbanned accounts to this file.", "");
-            Setting[2] = new ComboSetting("Format", "Format that the accounts will be save in.", new string[] { "Email:Password", "Email", "Username" }, 0);
+            Setting.Add(new PathSetting("Banned accounts", "Outputs banned accounts to this file.", ""));
+            Setting.Add(new PathSetting("Unbanned accounts", "Outputs unbanned accounts to this file.", ""));
+            Setting.Add(new ComboSetting("Format", "Format that the accounts will be save in.", new string[] { "Email:Password", "Email", "Username" }, 0));
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
@@ -39,11 +38,11 @@ namespace BanCheckerPlugin
 
             bool exists = false;
             // Check if the files exist.
-            if (!File.Exists(Setting[0].Get<string>())) {
+            if (!File.Exists(Setting.At(0).Get<string>())) {
                 DiscordHelper.Alert("'Banned accounts' path not set.", 1);
             }
             else exists = true;
-            if (!File.Exists(Setting[1].Get<string>())) {
+            if (!File.Exists(Setting.At(1).Get<string>())) {
                 DiscordHelper.Alert("'Unbanned accounts' path not set.", 2);
             }
             else exists = true;
@@ -61,16 +60,16 @@ namespace BanCheckerPlugin
 
             AccountsSaved.Add(permittedCredentials.Email, permittedCredentials.Password); // Add to list, so we don't save it twice.
 
-            if (!connection.Connected) { if(File.Exists(Setting[0].Get<string>())) File.AppendAllText(Setting[0].Get<string>(), Environment.NewLine + Format(permittedCredentials));}
-            else if(File.Exists(Setting[1].Get<string>())) File.AppendAllText(Setting[1].Get<string>(), Environment.NewLine + Format(permittedCredentials));
+            if (!connection.Connected) { if(File.Exists(Setting.At(0).Get<string>())) File.AppendAllText(Setting.At(0).Get<string>(), Environment.NewLine + Format(permittedCredentials));}
+            else if(File.Exists(Setting.At(1).Get<string>())) File.AppendAllText(Setting.At(1).Get<string>(), Environment.NewLine + Format(permittedCredentials));
         }
 
         private string Format(IPermittedCredentials permittedCredentials) {
-            if (Setting[2].Get<int>() == 0)
+            if (Setting.At(2).Get<int>() == 0)
                 return permittedCredentials.Email + ":" + permittedCredentials.Password;
-            if (Setting[2].Get<int>() == 1)
+            if (Setting.At(2).Get<int>() == 1)
                 return permittedCredentials.Email;
-            if (Setting[2].Get<int>() == 2)
+            if (Setting.At(2).Get<int>() == 2)
                 return permittedCredentials.Username;
             throw new ArgumentException();
         }

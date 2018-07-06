@@ -25,36 +25,28 @@ namespace SandPrinterPlugin
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[5];
-            Setting[0] = new StringSetting("Start x y z", "", "0 0 0");
-            Setting[1] = new StringSetting("End x y z", "", "0 0 0");
-            Setting[2] = new ComboSetting("Mode", null, new string[] {"Fast", "Accurate"}, 1);
-            Setting[3] = new BoolSetting("Sand walking", "Can the bot walk on sand (might cause it falling off with multiple bots)", false);
-            Setting[4] = new BoolSetting("No movement", "Should the bot place all the sand from the spot it is in?", false);
+            Setting.Add(new LocationSetting("Start x y z", ""));
+            Setting.Add(new LocationSetting("End x y z", ""));
+            Setting.Add(new ComboSetting("Mode", null, new string[] {"Fast", "Accurate"}, 1));
+            Setting.Add(new BoolSetting("Sand walking", "Can the bot walk on sand (might cause it falling off with multiple bots)", false));
+            Setting.Add(new BoolSetting("No movement", "Should the bot place all the sand from the spot it is in?", false));
         }
         public override PluginResponse OnEnable(IBotSettings botSettings) {
             
             if(!botSettings.loadWorld) return new PluginResponse(false, "'Load world' must be enabled.");
             if (!botSettings.loadInventory) return new PluginResponse(false, "'Load inventory' must be enabled.");
-            if (string.IsNullOrWhiteSpace(Setting[0].Get<string>()) ||
-                string.IsNullOrWhiteSpace(Setting[1].Get<string>())  ) return new PluginResponse(false, "No coordinates have been entered.");
-            if (!Setting[0].Get<string>().Contains(' ') || 
-                !Setting[1].Get<string>().Contains(' ')  ) return new PluginResponse(false, "Invalid coordinates (does not contain ' ').");
-            var startSplit = Setting[0].Get<string>().Split(' ');
-            var endSplit = Setting[1].Get<string>().Split(' ');
-            if (startSplit.Length != 3 || endSplit.Length != 3) return new PluginResponse(false, "Invalid coordinates (must be x y z).");
+            if (Setting.At(0).Get<ILocation>().Compare(new Location(0, 0, 0)) &&
+                Setting.At(1).Get<ILocation>().Compare(new Location(0, 0, 0))  ) return new PluginResponse(false, "No coordinates have been entered.");
 
             return new PluginResponse(true);
         }
         public override void OnStart() {
-            var startSplit = Setting[0].Get<string>().Split(' ');
-            var endSplit = Setting[1].Get<string>().Split(' ');
-            if (startSplit.Length != 3 || endSplit.Length != 3) return;
-            var radius = new IRadius(new Location(int.Parse(startSplit[0]), int.Parse(startSplit[1]), int.Parse(startSplit[2])),
-                                 new Location(int.Parse(endSplit[0]), int.Parse(endSplit[1]), int.Parse(endSplit[2])));
 
-            RegisterTask(new Print((Mode)Setting[2].Get<int>(), radius,
-                       Setting[3].Get<bool>(), Setting[4].Get<bool>())
+            var radius = new IRadius(Setting.At(0).Get<ILocation>(),
+                                     Setting.At(1).Get<ILocation>());
+
+            RegisterTask(new Print((Mode)Setting.At(2).Get<int>(), radius,
+                       Setting.At(3).Get<bool>(), Setting.At(4).Get<bool>())
                       );
         }
     }

@@ -22,17 +22,16 @@ namespace FollowPlugin
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[1];
-            Setting[0] = new StringSetting("Owner name/uuid", "Player that the bots will follow.", "");
+            Setting.Add(new StringSetting("Owner name/uuid", "Player that the bots will follow.", ""));
         }
         public override PluginResponse OnEnable(IBotSettings botSettings) {
             if (!botSettings.loadWorld) return new PluginResponse(false, "'Load world' must be enabled.");
             if (!botSettings.loadEntities || !botSettings.loadPlayers) return new PluginResponse(false, "'Load players' must be enabled.");
-            if (string.IsNullOrWhiteSpace(Setting[0].Get<string>())) return new PluginResponse(false, "Invalid owner name/uuid.");
+            if (string.IsNullOrWhiteSpace(Setting.At(0).Get<string>())) return new PluginResponse(false, "Invalid owner name/uuid.");
             return new PluginResponse(true);
         }
         public override void OnStart() {
-            RegisterTask(new Follow(Setting[0].Get<string>()));
+            RegisterTask(new Follow(Setting.At(0).Get<string>()));
         }
     }
 }

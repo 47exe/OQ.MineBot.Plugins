@@ -19,11 +19,10 @@ namespace AutoPotion
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[4];
-            Setting[0] = new BoolSetting("Strength", null, true);
-            Setting[1] = new BoolSetting("Speed", null, true);
-            Setting[2] = new BoolSetting("Fire resistance", null, true);
-            Setting[3] = new NumberSetting("Health", "At how much health should the bot use health potions.", 10, -1, 20, 1);
+            Setting.Add(new BoolSetting("Strength", null, true));
+            Setting.Add(new BoolSetting("Speed", null, true));
+            Setting.Add(new BoolSetting("Fire resistance", null, true));
+            Setting.Add(new NumberSetting("Health", "At how much health should the bot use health potions.", 10, -1, 20, 1));
         }
         public override PluginResponse OnEnable(IBotSettings botSettings) {
             if (!botSettings.loadInventory) return new PluginResponse(false, "'Load inventory' must be enabled.");
@@ -31,8 +30,8 @@ namespace AutoPotion
         }
         public override void OnStart() {
             RegisterTask(new Drink(
-                                Setting[0].Get<bool>(), Setting[1].Get<bool>(), Setting[2].Get<bool>(),
-                                Setting[3].Get<int>()
+                                Setting.At(0).Get<bool>(), Setting.At(1).Get<bool>(), Setting.At(2).Get<bool>(),
+                                Setting.At(3).Get<int>()
                         ));
         }
     }

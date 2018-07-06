@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using OQ.MineBot.GUI.Protocol.Movement.Maps;
 using OQ.MineBot.PluginBase;
@@ -20,18 +21,9 @@ namespace OreMinerPlugin.Tasks
         private bool      busy;
         private ILocation location;
 
-        public Mine(bool diamondOre, bool emeraldOre, bool ironOre, bool goldOre, bool redstoneOre, bool lapisOre, bool coalOre, MacroSync macro) {
+        public Mine(BlockIdCollection ids, MacroSync macro) {
             this.macro = macro;
-
-            var list = new List<ushort>();
-            if (diamondOre) list.Add(56);
-            if(emeraldOre)  list.Add(129);
-            if(ironOre)     list.Add(15);
-            if(goldOre)     list.Add(14);
-            if(redstoneOre) { list.Add(73); list.Add(74); }
-            if(lapisOre)    list.Add(21);
-            if(coalOre)     list.Add(16);
-            ids = list.ToArray();
+            this.ids = ids.collection.Select(x => x.id).Distinct().ToArray();
         }
 
         public override bool Exec() {

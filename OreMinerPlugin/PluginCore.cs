@@ -7,6 +7,7 @@ using OQ.MineBot.PluginBase;
 using OQ.MineBot.PluginBase.Base;
 using OQ.MineBot.PluginBase.Base.Plugin;
 using OQ.MineBot.PluginBase.Bot;
+using OQ.MineBot.PluginBase.Classes.Base;
 using OreMinerPlugin.Tasks;
 
 namespace OreMinerPlugin
@@ -15,15 +16,8 @@ namespace OreMinerPlugin
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
-            this.Setting = new IPluginSetting[8];
-            Setting[0] = new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", "");
-            Setting[1] = new BoolSetting("Diamond ore", "", true);
-            Setting[2] = new BoolSetting("Emerald ore", "", true);
-            Setting[3] = new BoolSetting("Iron ore", "", true);
-            Setting[4] = new BoolSetting("Gold ore", "", true);
-            Setting[5] = new BoolSetting("Redstone ore", "", false);
-            Setting[6] = new BoolSetting("Lapis Lazuli ore", "", false);
-            Setting[7] = new BoolSetting("Coal ore", "", false);
+            Setting.Add(new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", ""));
+            Setting.Add(new BlockCollectionSetting("IDs", "What ids will the miner look for.", "56:0 129:0 15:0 14:0 73:0 74:0 21:0 16:0", false));
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
@@ -36,10 +30,8 @@ namespace OreMinerPlugin
         public override void OnStart() {
             var macro = new MacroSync();
 
-            RegisterTask(new Mine(Setting[1].Get<bool>(), Setting[2].Get<bool>(), Setting[3].Get<bool>(),
-                                  Setting[4].Get<bool>(), Setting[5].Get<bool>(), Setting[6].Get<bool>(), Setting[7].Get<bool>(), 
-                                  macro));
-            RegisterTask(new InventoryMonitor(Setting[0].Get<string>(), macro));
+            RegisterTask(new Mine(Setting.At(1).Get<BlockIdCollection>(), macro));
+            RegisterTask(new InventoryMonitor(Setting.At(0).Get<string>(), macro));
         }
 
         public override void OnStop() {

@@ -34,8 +34,7 @@ namespace TunnelPlugin
         };
 
         public override void OnLoad(int version, int subversion, int buildversion) {
-            
-            this.Setting = new IPluginSetting[10];
+            /*
             Setting[0] = new NumberSetting("Height", "Height level that the bots should mine at", 12, 1, 256);
             Setting[1] = new ComboSetting("Pattern", "", new[] { PATTERNS[0].GetName(), PATTERNS[1].GetName(), PATTERNS[2].GetName() }, 1);
             Setting[2] = new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", "");
@@ -46,6 +45,21 @@ namespace TunnelPlugin
             Setting[7] = new BoolSetting("Redstone ore", "", false);
             Setting[8] = new BoolSetting("Lapis Lazuli ore", "", false);
             Setting[9] = new BoolSetting("Coal ore", "", false);
+            */
+
+            Setting.Add(new NumberSetting("Height", "Height level that the bots should mine at", 12, 1, 256));
+            Setting.Add(new ComboSetting("Pattern", "", new[] { PATTERNS[0].GetName(), PATTERNS[1].GetName(), PATTERNS[2].GetName() }, 1));
+            Setting.Add(new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", ""));
+
+            var group = new GroupSetting("Ore", "Select which ore types should the bot focus");
+                group.Add(new BoolSetting("Diamond ore", "", true));
+                group.Add(new BoolSetting("Emerald ore", "", true));
+                group.Add(new BoolSetting("Iron ore", "", true));
+                group.Add(new BoolSetting("Gold ore", "", true));
+                group.Add(new BoolSetting("Redstone ore", "", false));
+                group.Add(new BoolSetting("Lapis Lazuli ore", "", false));
+                group.Add(new BoolSetting("Coal ore", "", false));
+            Setting.Add(group);
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
@@ -56,12 +70,12 @@ namespace TunnelPlugin
         }
 
         public override void OnStart() {
-
+            var group = (IParentSetting)Setting.Get("Ore");
             var macro = new MacroSync();
-            RegisterTask(new Tunnel(Setting[0].Get<int>(), PATTERNS[Setting[1].Get<int>()],
-                Setting[3].Get<bool>(), Setting[4].Get<bool>(), Setting[5].Get<bool>(), Setting[6].Get<bool>(),
-                Setting[7].Get<bool>(), Setting[8].Get<bool>(), Setting[9].Get<bool>(), macro));
-            RegisterTask(new InventoryMonitor(Setting[2].Get<string>(), macro));
+            RegisterTask(new Tunnel(Setting.At(0).Get<int>(), PATTERNS[Setting.At(1).Get<int>()],
+                group.GetValue<bool>("Diamond ore"), group.GetValue<bool>("Emerald ore"), group.GetValue<bool>("Iron ore"), group.GetValue<bool>("Gold ore"),
+                group.GetValue<bool>("Redstone ore"), group.GetValue<bool>("Lapis Lazuli ore"), group.GetValue<bool>("Coal ore"), macro));
+            RegisterTask(new InventoryMonitor(Setting.At(2).Get<string>(), macro));
         }
 
         public override void OnDisable() {
