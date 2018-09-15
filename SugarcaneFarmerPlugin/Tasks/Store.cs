@@ -8,7 +8,7 @@ namespace SugarcaneFarmerPlugin.Tasks
 {
     public class Store : ITask, ITickListener
     {
-        public static readonly int[] FOOD = { 364, 412, 320, 424, 366, 393, 297 };
+        private static readonly int[] FOOD = { 260, 297, 319, 320, 350, 357, 360, 364, 366, 391, 393, 400, 293 };
 
         private bool busy;
         private IChestMap chestMap;
@@ -76,6 +76,7 @@ namespace SugarcaneFarmerPlugin.Tasks
         }
     }
 }
+<<<<<<< HEAD
 
 public class MacroSync
 {
@@ -103,3 +104,5 @@ public class MacroSync
         macroTask = player.functions.StartMacro(name);
     }
 }
+=======
+>>>>>>> dba81812341b3c6b7afaec169ca0d5fd4a64bfd0
