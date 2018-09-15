@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using OQ.MineBot.PluginBase;
 using OQ.MineBot.PluginBase.Base.Plugin.Tasks;
 using OQ.MineBot.PluginBase.Classes;
 using OQ.MineBot.PluginBase.Classes.Window;
@@ -15,22 +17,40 @@ namespace NetherwartFarmerPlugin.Tasks
 
         private bool busy;
         private IChestMap chestMap;
+        private readonly MacroSync macroSync;
+
+        private readonly bool nothing, store, macro;
+
+        public Store(int mode, MacroSync macroSync) {
+            this.macroSync = macroSync;
+
+            nothing = mode == 0;
+            store = mode == 1;
+            macro = mode == 2;
+        }
 
         public override bool Exec() {
-            return !status.entity.isDead && inventory.IsFull() && !status.eating &&
-                   !busy && player.status.containers.GetWindow("minecraft:chest") == null;
+            return !nothing && !status.entity.isDead && inventory.IsFull() && !status.eating &&
+                   !busy && player.status.containers.GetWindow("minecraft:chest") == null &&
+                   !macroSync.IsMacroRunning();
         }
 
         public void OnTick() {
 
-            // Check if this tick we should scan the
-            // map for chests.
-            if (chestMap == null) {
-                Scan();
-                return;
-            }
+            if (store) {
 
-            Deposite();
+                // Check if this tick we should scan the
+                // map for chests.
+                if (chestMap == null) {
+                    Scan();
+                    return;
+                }
+
+                Deposite();
+            }
+            else if (macro) {
+                macroSync.Run(player);   
+            }
         }
 
         private void Deposite() {
@@ -41,15 +61,12 @@ namespace NetherwartFarmerPlugin.Tasks
                 if (window != null) {
                     inventory.Deposite(window, FOOD);
                     player.tickManager.Register(3, () => {
-                        CloseAllInventories(() => {
-                            busy = false;
-                        });
+                        actions.CloseContainer(window.id);
+                        busy = false;
                     });
                 } else {
                     player.tickManager.Register(3, () => { // Put a delay on chest open for 3 ticks.
-                        CloseAllInventories(() => {
-                            busy = false;
-                        });
+                        busy = false;
                     });
                 }
             });
@@ -62,25 +79,32 @@ namespace NetherwartFarmerPlugin.Tasks
                 busy = false;
             });
         }
+    }
+}
 
-        private void CloseAllInventories(Action callback) {
+public class MacroSync
+{
+    private Task macroTask;
+    private string name;
 
-            IStopToken token = null;
-            token = player.tickManager.RegisterReocurring(3, () => {
+    public MacroSync() { }
+    public MacroSync(string name) {
+        this.name = name;
+    }
 
-                if(player.status.containers.openWindows.Count == 0) {
+    public bool IsMacroRunning()
+    {
+        //Check if there is an instance of the task.
+        if (macroTask == null) return false;
+        //Check completion state.
+        return !macroTask.IsCompleted && !macroTask.IsCanceled && !macroTask.IsFaulted;
+    }
 
-                    // Close player's inventory.
-                    player.functions.CloseInventory();
+    public void Run(IPlayer player) {
+        macroTask = player.functions.StartMacro(name);
+    }
 
-                    token.Stop();
-                    callback();
-                    return;
-                }
-
-                var window = player.status.containers.openWindows.FirstOrDefault();
-                if(!window.Equals(default(KeyValuePair<int, IWindow>))) player.status.containers.RemoveWindow(window.Key);
-            });
-        }
+    public void Run(IPlayer player, string name) {
+        macroTask = player.functions.StartMacro(name);
     }
 }

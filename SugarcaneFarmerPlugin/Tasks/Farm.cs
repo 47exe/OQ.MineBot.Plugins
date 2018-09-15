@@ -14,19 +14,24 @@ namespace SugarcaneFarmerPlugin.Tasks
         private readonly int x, z;
         private readonly Mode mode;
         private readonly bool fullOnly;
+        private readonly bool doNothing;
+        private readonly MacroSync macroSync;
 
         private bool scan;
         private bool scanning;
         private ILocation[] locations;
         private bool busy;
 
-        public Farm(int x, int z, Mode mode, bool fullOnly) {
+        public Farm(int x, int z, Mode mode, bool fullOnly, bool doNothing, MacroSync macroSync) {
             this.x = x;
             this.z = z;
             this.mode = mode;
             this.scan = true;
             this.fullOnly = fullOnly;
             this.personalBlocks.Clear();
+
+            this.doNothing = doNothing;
+            this.macroSync = macroSync;
         }
 
         public void OnStart() {
@@ -34,8 +39,9 @@ namespace SugarcaneFarmerPlugin.Tasks
         }
 
         public override bool Exec() {
-            return !status.entity.isDead && !inventory.IsFull() && !status.eating &&
-                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null;
+            return !status.entity.isDead && (doNothing || !inventory.IsFull()) && !status.eating &&
+                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null &&
+                   !macroSync.IsMacroRunning();
         }
 
         private int tick = 0;

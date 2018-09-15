@@ -48,8 +48,8 @@ namespace AreaMiner.Tasks
             map.Cancelled += (areaMap, cuboid) => {
                 busy = false;
             };
-            map.Start();
             busy = true;
+            map.Start();
         }
     }
 }

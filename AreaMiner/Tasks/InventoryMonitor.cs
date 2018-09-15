@@ -13,7 +13,7 @@ namespace AreaMiner.Tasks
         }
 
         public override bool Exec() {
-            return !status.entity.isDead && !status.eating && !macro.IsMacroRunning() && inventory.IsFull();
+            return !string.IsNullOrWhiteSpace(macroName) && !status.entity.isDead && !status.eating && !macro.IsMacroRunning() && inventory.IsFull();
         }
 
         public void OnTick() {

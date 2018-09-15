@@ -14,22 +14,27 @@ namespace CropFarmerPlugin.Tasks
 
         private int  x, y;
         private Mode mode;
+        private bool doNothing;
+        private MacroSync macroSync;
 
         private bool scan;
         private bool scanning;
         private ILocation[] locations;
         private bool busy;
 
-        public Farm(int x, int y, Mode mode) {
+        public Farm(int x, int y, Mode mode, bool doNothing, MacroSync macroSync) {
             this.x = x;
             this.y = y;
             this.mode = mode;
             this.scan = true;
+            this.doNothing = doNothing;
+            this.macroSync = macroSync;
         }
 
         public override bool Exec() {
-            return !status.entity.isDead && !inventory.IsFull() && !status.eating &&
-                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null;
+            return !status.entity.isDead && (doNothing || !inventory.IsFull()) && !status.eating &&
+                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null &&
+                   !macroSync.IsMacroRunning();
         }
 
         public override void Start() {
@@ -78,7 +83,7 @@ namespace CropFarmerPlugin.Tasks
             actions.LookAtBlock(location, true);
             player.tickManager.Register(1, () => {
                 actions.BlockDig(location, action => {
-                    player.tickManager.Register(3, () => {
+                    player.tickManager.Register(mode == Mode.Fast?3:10, () => {
                         Replant(location.Offset(-1), blockData);
                         object obj; beingMined.TryRemove(location, out obj);
                         busy = false;
@@ -102,7 +107,7 @@ namespace CropFarmerPlugin.Tasks
                 player.tickManager.Register(1, () => {
                     var data = player.functions.FindValidNeighbour(location);
                     if(data != null)
-                        actions.BlockPlaceOnBlockFace(location, data.face);
+                        actions.BlockPlaceOnBlockFace(location, 1);
                 });
             }
         }

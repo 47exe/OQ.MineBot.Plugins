@@ -15,22 +15,27 @@ namespace NetherwartFarmerPlugin.Tasks
 
         private int  x, y;
         private Mode mode;
+        private bool doNothing;
+        private MacroSync macroSync;
 
         private bool scan;
         private bool scanning;
         private ILocation[] locations;
         private bool busy;
 
-        public Farm(int x, int y, Mode mode) {
+        public Farm(int x, int y, Mode mode, bool doNothing, MacroSync macroSync) {
             this.x = x;
             this.y = y;
             this.mode = mode;
             this.scan = true;
+            this.doNothing = doNothing;
+            this.macroSync = macroSync;
         }
 
         public override bool Exec() {
-            return !status.entity.isDead && !inventory.IsFull() && !status.eating &&
-                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null;
+            return !status.entity.isDead && (doNothing || !inventory.IsFull()) && !status.eating &&
+                   !scanning && !busy && player.status.containers.GetWindow("minecraft:chest") == null &&
+                   !macroSync.IsMacroRunning();
         }
 
         public override void Start() {

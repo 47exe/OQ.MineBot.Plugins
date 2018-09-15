@@ -70,6 +70,7 @@
             this.Chat_Box.Size = new System.Drawing.Size(540, 330);
             this.Chat_Box.TabIndex = 3;
             this.Chat_Box.Text = "";
+            this.Chat_Box.TextChanged += new System.EventHandler(this.Chat_Box_TextChanged);
             // 
             // ChatForm
             // 

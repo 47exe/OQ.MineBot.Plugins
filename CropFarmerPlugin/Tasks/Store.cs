@@ -1,4 +1,6 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
+using OQ.MineBot.PluginBase;
 using OQ.MineBot.PluginBase.Base.Plugin.Tasks;
 using OQ.MineBot.PluginBase.Pathfinding.Sub;
 
@@ -10,22 +12,40 @@ namespace CropFarmerPlugin.Tasks
 
         private bool busy;
         private IChestMap chestMap;
+        private readonly MacroSync macroSync;
+
+        private readonly bool nothing, store, macro;
+
+        public Store(int mode, MacroSync macroSync) {
+            this.macroSync = macroSync;
+
+            nothing = mode == 0;
+            store = mode == 1;
+            macro = mode == 2;
+        }
 
         public override bool Exec() {
-            return !status.entity.isDead && inventory.IsFull() && !status.eating &&
-                   !busy && player.status.containers.GetWindow("minecraft:chest") == null;
+            return !nothing && !status.entity.isDead && inventory.IsFull() && !status.eating &&
+                   !busy && player.status.containers.GetWindow("minecraft:chest") == null &&
+                   !macroSync.IsMacroRunning();
         }
 
         public void OnTick() {
 
-            // Check if this tick we should scan the
-            // map for chests.
-            if (chestMap == null) {
-                Scan();
-                return;
-            }
+            if (store) {
 
-            Deposite();
+                // Check if this tick we should scan the
+                // map for chests.
+                if (chestMap == null) {
+                    Scan();
+                    return;
+                }
+
+                Deposite();
+            }
+            else if (macro) {
+                macroSync.Run(player);   
+            }
         }
 
         private void Deposite() {
@@ -54,5 +74,32 @@ namespace CropFarmerPlugin.Tasks
                 busy = false;
             });
         }
+    }
+}
+
+public class MacroSync
+{
+    private Task macroTask;
+    private string name;
+
+    public MacroSync() { }
+    public MacroSync(string name) {
+        this.name = name;
+    }
+
+    public bool IsMacroRunning()
+    {
+        //Check if there is an instance of the task.
+        if (macroTask == null) return false;
+        //Check completion state.
+        return !macroTask.IsCompleted && !macroTask.IsCanceled && !macroTask.IsFaulted;
+    }
+
+    public void Run(IPlayer player) {
+        macroTask = player.functions.StartMacro(name);
+    }
+
+    public void Run(IPlayer player, string name) {
+        macroTask = player.functions.StartMacro(name);
     }
 }

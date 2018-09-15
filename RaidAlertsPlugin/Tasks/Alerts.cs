@@ -31,19 +31,22 @@ namespace RaidAlertsPlugin.Tasks
         private readonly string             friendly;
         private readonly ILocation[]        lamps;
         private readonly DiscordHelper.Mode mode;
-        private readonly bool               falling;
+        private readonly bool               falling_tnt;
+        private readonly bool               falling_sand;
 
-        public Alerts(ulong discord, bool local, bool explosion, bool wither, bool creeper, bool players, string friendly, ILocation[] lamps, DiscordHelper.Mode mode, bool falling) {
-            this.discord   = discord;
-            this.local     = local;
-            this.explosion = explosion;
-            this.wither    = wither;
-            this.creeper   = creeper;
-            this.players   = players;
-            this.friendly  = friendly;
-            this.lamps     = lamps;
-            this.mode      = mode;
-            this.falling   = falling;
+        public Alerts(ulong discord, bool local, bool explosion, bool wither, bool creeper, bool players, string friendly, ILocation[] lamps, DiscordHelper.Mode mode, bool falling_tnt, bool falling_sand) {
+            this.discord      = discord;
+            this.local        = local;
+            this.explosion    = explosion;
+            this.wither       = wither;
+            this.creeper      = creeper;
+            this.players      = players;
+            this.friendly     = friendly;
+            this.lamps        = lamps;
+            this.mode         = mode;
+            this.falling_tnt  = falling_tnt;
+            this.falling_sand = falling_sand;
+
         }
 
         public override bool Exec() { return true; }
@@ -66,21 +69,21 @@ namespace RaidAlertsPlugin.Tasks
         }
 
         private void OnDisconnected(IPlayer player, string reason) {
-            NotifyUser(ApplyVariables("Bot disconnected.", player.status.entity.location.ToLocation(0), null, "", reason), 10, 8);
+            var location = player?.status?.entity?.location?.ToLocation(0);
+            if(location != null) NotifyUser(ApplyVariables("Bot disconnected.", location, null, "", reason), 10, 8);
         }
 
         private void OnObjectSpawned(IWorldObject worldObject, double d, double d1, double d2, byte pitch, byte yaw) {
-            if (!falling) return;
-
+            
             var fallingOjbect = worldObject as FallingBlockObject;
             if (fallingOjbect != null) {
-                if (fallingOjbect.BlockType == 12) NotifyUser(ApplyVariables("Falling sand block detected.", player.status.entity.location.ToLocation(0), new Location((int)d, (float)d1, (int)d2), "Sand"), 6, 6);
-                else if (fallingOjbect.BlockType == 46) NotifyUser(ApplyVariables("Falling TNT block detected.", player.status.entity.location.ToLocation(0), new Location((int)d, (float)d1, (int)d2), "TNT"), 7, 7);
+                if (falling_sand && (fallingOjbect.BlockType == 12 || fallingOjbect.BlockType == 13 || fallingOjbect.BlockType == 4108)) NotifyUser(ApplyVariables("Falling sand block detected.", player?.status?.entity?.location?.ToLocation(0), new Location((int)d, (float)d1, (int)d2), "Sand"), 6, 6);
+                else if (falling_tnt && fallingOjbect.BlockType == 46) NotifyUser(ApplyVariables("Falling TNT block detected.", player?.status?.entity?.location?.ToLocation(0), new Location((int)d, (float)d1, (int)d2), "TNT"), 7, 7);
             }
         }
 
         private void OnDeath(IPlayer player) {
-            NotifyUser(ApplyVariables("Bot has died.", player.status.entity.location.ToLocation(0), null, ""), 10, 5);
+            NotifyUser(ApplyVariables("Bot has died.", player?.status?.entity?.location?.ToLocation(0), null, ""), 10, 5);
         }
 
         private void OnBlockChanged(IPlayer player, ILocation location, ushort oldId, ushort newId)  {
@@ -94,7 +97,7 @@ namespace RaidAlertsPlugin.Tasks
                 //Notify the user as the this block is a disabled lamp
                 //and is tracked.
                 NotifyUser(
-                    ApplyVariables("Unpowered lamp detected", player.status.entity.location.ToLocation(0), location, ""), 10,
+                    ApplyVariables("Unpowered lamp detected", player?.status?.entity?.location?.ToLocation(0), location, ""), 10,
                     4);
             }
         }
@@ -113,22 +116,22 @@ namespace RaidAlertsPlugin.Tasks
                 if (!friendly.Contains(playerEntity.uuid, StringComparer.CurrentCultureIgnoreCase)) {
                     var name = player.entities.FindNameByUuid(playerEntity?.uuid);
                     if((name?.Name != null && !friendly.Contains(name.Name)) && (name?.Uuid != null && !player.entities.IsBot(name.Uuid)))
-                        NotifyUser(ApplyVariables("A player has been detected.", player.status.entity.location.ToLocation(0), playerEntity.location.ToLocation(0), name.Name), 4, 3);
+                        NotifyUser(ApplyVariables("A player has been detected.", player?.status?.entity?.location?.ToLocation(0), playerEntity.location.ToLocation(0), name.Name), 4, 3);
                 }
             }
             else if(entity is IMobEntity) {
                 var mobEntity = entity as IMobEntity;
                 
                 if(mobEntity.type == MobType.Wither && wither)
-                    NotifyUser(ApplyVariables("A wither has been detected.", player.status.entity.location.ToLocation(0), mobEntity.location.ToLocation(0), "Wither"), 10, 2);
+                    NotifyUser(ApplyVariables("A wither has been detected.", player?.status?.entity?.location?.ToLocation(0), mobEntity.location.ToLocation(0), "Wither"), 10, 2);
                 else if(mobEntity.type == MobType.Creeper && creeper)
-                    NotifyUser(ApplyVariables("A creeper has been detected.", player.status.entity.location.ToLocation(0), mobEntity.location.ToLocation(0), "Creeper"), 4, 1);
+                    NotifyUser(ApplyVariables("A creeper has been detected.", player?.status?.entity?.location?.ToLocation(0), mobEntity.location.ToLocation(0), "Creeper"), 4, 1);
             }
         }
 
         private void OnExplosion(IPlayer player, float X, float Y, float Z) {
             if (explosion)
-                NotifyUser(ApplyVariables("An explosion has been detected.", player.status.entity.location.ToLocation(0), new Location((int)Math.Round(X), Y, (int)Math.Round(Z)), ""), 10, 0);
+                NotifyUser(ApplyVariables("An explosion has been detected.", player?.status?.entity?.location?.ToLocation(0), new Location((int)Math.Round(X), Y, (int)Math.Round(Z)), ""), 10, 0);
         }
 
         private static readonly ConcurrentDictionary<int, DateTime> IDLIMIT = new ConcurrentDictionary<int, DateTime>();
@@ -142,12 +145,12 @@ namespace RaidAlertsPlugin.Tasks
         }
 
         private string[] ApplyVariables(string text, ILocation playerLocation, ILocation targetLocation, string targetName, string reason = null) {
-
+            
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("**"+text+"**");
             builder.AppendLine();
             if (!string.IsNullOrWhiteSpace(targetName)) builder.AppendLine("Name: *'" + targetName + "'*");
-            if (targetLocation != null) builder.AppendLine("Location: *'" + targetLocation + "' ("+ Math.Floor(Math.Abs(targetLocation.Distance(playerLocation))) + " blocks away)*");
+            if (targetLocation != null) builder.AppendLine("Location: *'" + targetLocation + (playerLocation == null ? "*" : "' (" + Math.Floor(Math.Abs(targetLocation.Distance(playerLocation))) + " blocks away)*"));
             builder.AppendLine("Bot name: *'" + status.username + "'*");
             if (reason != null) builder.AppendLine("Reason: *'" + reason + "'*");
             return new string[] {text, builder.ToString()};

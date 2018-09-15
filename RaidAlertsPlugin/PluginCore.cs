@@ -20,7 +20,7 @@ using RaidAlertsPlugin.Tasks;
 
 namespace RaidAlertsPlugin
 {
-    [Plugin(1, "Raid alerts", "Notifies the user on discord when an explosion occurs/mobs appear/players get close.")]
+    [Plugin(2, "Raid alerts", "Notifies the user on discord when an explosion occurs/mobs appear/players get close.")]
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
@@ -46,7 +46,8 @@ namespace RaidAlertsPlugin
                 notificationGroup.Add(new BoolSetting("Wither notifications", "", true));
                 notificationGroup.Add(new BoolSetting("Creeper notifications", "", true));
                 notificationGroup.Add(new BoolSetting("Player notifications", "", true));
-                notificationGroup.Add(new BoolSetting("Detect falling blocks", "Should the bot detected falling sand and falling tnt", true));
+                notificationGroup.Add(new BoolSetting("Detect falling tnt", "Should the bot detected falling tnt", true));
+                notificationGroup.Add(new BoolSetting("Detect falling sand", "Should the bot detected falling sand", true));
             Setting.Add(notificationGroup);
 
             var otherGroup = new GroupSetting("Miscellaneous", "");
@@ -76,7 +77,7 @@ namespace RaidAlertsPlugin
 
             // Do warnings.
             if(string.IsNullOrWhiteSpace(miscellaneousGroup.GetValue<string>("Lamp coordinates")) && (!botSettings.loadWorld ||botSettings.staticWorlds)) DiscordHelper.Error("[RaidAlerts] 'Load worlds' should be enabled, 'Shared worlds' should be disabled.", 584);
-            if (notificationsGroup.GetValue<bool>("Detect falling blocks") && (!botSettings.loadEntities || !botSettings.loadMobs)) DiscordHelper.Error("[RaidAlerts] 'Load entities' & 'Load mobs' should be enabled.", 585);
+            if ((notificationsGroup.GetValue<bool>("Detect falling tnt") || notificationsGroup.GetValue<bool>("Detect falling sand")) && (!botSettings.loadEntities || !botSettings.loadMobs)) DiscordHelper.Error("[RaidAlerts] 'Load entities' & 'Load mobs' should be enabled.", 585);
 
             return new PluginResponse(true);
         }
@@ -112,7 +113,7 @@ namespace RaidAlertsPlugin
                             ulong.Parse(Setting.At(0).Get<string>()),
                             Setting.At(1).Get<bool>(),
                             notificationsGroup.GetValue<bool>("Explosion notifications"), notificationsGroup.GetValue<bool>("Wither notifications"), notificationsGroup.GetValue<bool>("Creeper notifications"), notificationsGroup.GetValue<bool>("Player notifications"),
-                            miscellaneousGroup.GetValue<string>("Friendly uuid(s)/name(s)"), lampLocations.ToArray(), (DiscordHelper.Mode)miscellaneousGroup.GetValue<int>("Mode"), notificationsGroup.GetValue<bool>("Detect falling blocks")
+                            miscellaneousGroup.GetValue<string>("Friendly uuid(s)/name(s)"), lampLocations.ToArray(), (DiscordHelper.Mode)miscellaneousGroup.GetValue<int>("Mode"), notificationsGroup.GetValue<bool>("Detect falling tnt"), notificationsGroup.GetValue<bool>("Detect falling sand")
                         ));
         }
     }

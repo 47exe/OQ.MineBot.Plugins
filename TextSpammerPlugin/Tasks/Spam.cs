@@ -6,7 +6,7 @@ using OQ.MineBot.PluginBase.Classes.Blocks;
 
 namespace TextSpammerPlugin.Tasks
 {
-    public class Spam : ITask
+    public class Spam : ITask, ITickListener
     {
         private static readonly Random random = new Random();
 
@@ -28,19 +28,11 @@ namespace TextSpammerPlugin.Tasks
             this.linear   = linear;
         }
 
-        public override void Start() {
-            player.events.onTick += Tick;
-        }
-
-        public override void Stop() {
-            player.events.onTick -= Tick;
-        }
-
         public override bool Exec() {
             return DateTime.Now.Subtract(m_next).TotalMilliseconds > 0;
         }
 
-        public void Tick(IPlayer p) {
+        public void OnTick() {
 
             // Schedule next message.
             m_next =

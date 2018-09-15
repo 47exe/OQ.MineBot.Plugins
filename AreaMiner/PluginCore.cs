@@ -14,7 +14,7 @@ using OQ.MineBot.Protocols.Classes.Base;
 
 namespace AreaMiner
 {
-    [Plugin(1, "Area miner", "Mines the area that is selected by the user.", "https://www.youtube.com/watch?v=Z0VB4PElvRY&t=129s")]
+    [Plugin(3, "Area miner", "Mines the area that is selected by the user.", "https://www.youtube.com/watch?v=Z0VB4PElvRY")]
     public class PluginCore : IStartPlugin
     {
         private static readonly ShareManager shares = new ShareManager();
@@ -24,6 +24,7 @@ namespace AreaMiner
             this.Setting.Add(new LocationSetting("Start x y z", ""));
             this.Setting.Add(new LocationSetting("End x y z", ""));
             this.Setting.Add(new StringSetting("Macro on inventory full", "Starts the macro when the bots inventory is full.", ""));
+            this.Setting.Add(new StringSetting("Macro on out of tools", "Starts the macro when the bot runs out of pickaxes.", ""));
             this.Setting.Add(new ComboSetting("Speed mode", null, new string[] { "Accurate", "Fast" }, 0));
             this.Setting.Add(new ComboSetting("Path mode", null, new string[] { "Advanced (mining & building)", "Basic" }, 0));
 
@@ -65,6 +66,7 @@ namespace AreaMiner
 
             var macro = new MacroSync();
             RegisterTask(new InventoryMonitor(Setting.GetValue<string>("Macro on inventory full"), macro));
+            RegisterTask(new RestockMonitor(Setting.GetValue<string>("Macro on out of tools"), macro));
             RegisterTask(new Path(shares, (PathMode) Setting.GetValue<int>("Path mode"), macro ));
             RegisterTask(new Mine(shares, (Mode)Setting.GetValue<int>("Speed mode"), (PathMode)Setting.GetValue<int>("Path mode"), blocks.GetValue<BlockIdCollection>("Ignore ids").collection.Select(x=>x.id).Distinct().ToArray(), macro));
         }

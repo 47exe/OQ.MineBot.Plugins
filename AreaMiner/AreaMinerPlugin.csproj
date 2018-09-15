@@ -45,6 +45,7 @@
     <Compile Include="Tasks\InventoryMonitor.cs" />
     <Compile Include="Tasks\Mine.cs" />
     <Compile Include="Tasks\Path.cs" />
+    <Compile Include="Tasks\RestockMonitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\OQ.MineBot.PluginBase\OQ.MineBot.PluginBase.csproj">

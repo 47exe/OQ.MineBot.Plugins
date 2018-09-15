@@ -59,13 +59,6 @@ namespace ChatSpyPlugin
                             //Unhook, form closed.
                             player.events.onChat -= OnChatMessage;
                     }
-                    else {
-
-                        // set the current caret position to the end
-                        Chat_Box.SelectionStart = Chat_Box.Text.Length;
-                        // scroll it automatically
-                        Chat_Box.ScrollToCaret();
-                    }
                 });
             }
             catch {
@@ -109,6 +102,14 @@ namespace ChatSpyPlugin
 
         private void Chat_Send_Click(object sender, EventArgs e) {
             Chat_Box_KeyDown(sender, new KeyEventArgs(Keys.Enter));
+        }
+
+        private void Chat_Box_TextChanged(object sender, EventArgs e) {
+            // set the current caret position to the end
+            Chat_Box.SelectionStart = Chat_Box.Text.Length;
+            // scroll it automatically
+            Chat_Box.ScrollToCaret();
+            
         }
     }
 }

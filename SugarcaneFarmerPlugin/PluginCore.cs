@@ -21,7 +21,7 @@ using SugarcaneFarmerPlugin.Tasks;
 
 namespace SugarcaneFarmerPlugin
 {
-    [Plugin(1, "Sugarcane farmer", "Automatically farms sugarcanes")]
+    [Plugin(2, "Sugarcane farmer", "Automatically farms sugarcanes")]
     public class PluginCore : IStartPlugin
     {
         public override void OnLoad(int version, int subversion, int buildversion) {
@@ -29,6 +29,12 @@ namespace SugarcaneFarmerPlugin
             Setting.Add(new NumberSetting("Radius (sugarcane, y-radius):", "What can be the Y difference for the bot for it to find valid sugarcanes.", 4, 1, 256, 1));
             Setting.Add(new ComboSetting("Speed mode", null, new string[] {"Accurate", "Tick", "Fast"}, 1));
             Setting.Add(new BoolSetting("Fully grown only?", "Mine ONLY the sugarcanes that are 3 block high.", false));
+
+            var automationGroup = new GroupSetting("Automation", "Use these settings to automate actions.");
+            var storeSetting = new ComboSetting("On Inventory Full", "What should the bot do once it's inventory is full.", new[] { "Nothing", "Store Inventory In Closest Chest", "Run Macro" }, 1);
+            storeSetting.Add(2, new StringSetting("On Inventory Full Macro", null, ""));
+            automationGroup.Add(storeSetting);
+            this.Setting.Add(automationGroup);
         }
 
         public override PluginResponse OnEnable(IBotSettings botSettings) {
@@ -36,11 +42,15 @@ namespace SugarcaneFarmerPlugin
             return new PluginResponse(true);
         }
         public override void OnStart() {
+
+            var macroSync = new MacroSync(((IParentSetting)((IParentSetting)Setting.Get("Automation")).GetGroup(false).Get("On Inventory Full")).Get(2, "On Inventory Full Macro").Get<string>());
+            var actionNr = ((IParentSetting)Setting.Get("Automation")).GetValue<int>("On Inventory Full");
+
             RegisterTask(new Farm(
                             Setting.At(0).Get<int>(), Setting.At(1).Get<int>(),
-                            (Mode)Setting.At(2).Get<int>(), Setting.At(3).Get<bool>()
-                        ));
-            RegisterTask(new Store());
+                            (Mode)Setting.At(2).Get<int>(), Setting.At(3).Get<bool>(),
+                            actionNr == 0, macroSync));
+            RegisterTask(new Store(actionNr, macroSync));
 
         }
         public override void OnDisable() {
