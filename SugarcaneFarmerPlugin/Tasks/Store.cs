@@ -6,7 +6,7 @@ namespace SugarcaneFarmerPlugin.Tasks
 {
     public class Store : ITask, ITickListener
     {
-        private static readonly int[] FOOD = { 260, 297, 319, 320, 350, 357, 360, 364, 366, 391, 393, 400 };
+        private static readonly int[] FOOD = { 260, 297, 319, 320, 350, 357, 360, 364, 366, 391, 393, 400, 293 };
 
         private bool busy;
         private IChestMap chestMap;
